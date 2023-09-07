@@ -1,0 +1,48 @@
+# Github action define for test each major OS and show test result automatically
+name: cover-checker test and get coverage
+
+on:
+  pull_request:
+    branches: [ master ]
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+
+jobs:
+  test-linux:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      checks: write
+      statuses: write
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up JDK 1.8
+      uses: actions/setup-java@v1
+      with:
+        java-version: 1.8
+    - name: Build with Gradle
+      run: ./gradlew clean build jar
+    - name: comment coverage report
+      shell: bash
+      env:
+        ACCESS_TOKEN: ${{ secrets.ACTION_TOKEN }}
+      run: java -jar ./cover-checker-console/build/libs/cover-checker-1.5.0-all.jar -c ./cover-checker-cobertura/build/reports/jacoco -c ./cover-checker-console/build/reports/jacoco -c ./cover-checker-core/build/reports/jacoco/ -c ./cover-checker-github/build/reports/jacoco -c ./cover-checker-jacoco/build/reports/jacoco -t 80 -r $GITHUB_REPOSITORY -g $ACCESS_TOKEN -p $(echo $GITHUB_REF | awk 'BEGIN { FS = "/" } ; { print $3 }')
+  test-macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up JDK 1.8
+      uses: actions/setup-java@v1
+      with:
+        java-version: 1.8
+    - name: Build with Gradle
+      run: ./gradlew clean build jar
+  test-window:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up JDK 1.8
+      uses: actions/setup-java@v1
+      with:
+        java-version: 1.8
+    - name: Build with Gradle
+      run: ./gradlew.bat clean build jar
